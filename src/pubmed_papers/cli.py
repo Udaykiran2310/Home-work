@@ -5,29 +5,29 @@ from pathlib import Path
 from typing import Optional
 import csv
 from datetime import datetime
+import json
 
 import typer
 from rich.console import Console
 from rich.table import Table
-from rich import print as rprint
 
-from pubmed_papers.core import PubMedFetcher, Paper
+from .core import PubMedFetcher, Paper
 
 app = typer.Typer()
 console = Console()
 
-def format_paper_for_csv(paper: Paper) -> dict:
+def format_paper_for_csv(paper: dict) -> dict:
     """Format a paper object for CSV output."""
     return {
-        "PubmedID": paper.pubmed_id,
-        "Title": paper.title,
-        "Publication Date": paper.publication_date.strftime("%Y-%m-%d"),
-        "Non-academic Author(s)": "; ".join(a.name for a in paper.non_academic_authors),
-        "Company Affiliation(s)": "; ".join(paper.company_affiliations),
-        "Corresponding Author Email": paper.corresponding_author_email or ""
+        "PubmedID": paper["pubmed_id"],
+        "Title": paper["title"],
+        "Publication Date": paper["publication_date"].strftime("%Y-%m-%d"),
+        "Non-academic Author(s)": "; ".join(a["name"] for a in paper["non_academic_authors"]),
+        "Company Affiliation(s)": "; ".join(paper["company_affiliations"]),
+        "Corresponding Author Email": paper.get("corresponding_author_email", "")
     }
 
-def save_to_csv(papers: list[Paper], output_file: Path):
+def save_to_csv(papers: list, output_file: Path):
     """Save papers to a CSV file."""
     if not papers:
         console.print("[yellow]No papers found matching the criteria.[/yellow]")
@@ -48,7 +48,7 @@ def save_to_csv(papers: list[Paper], output_file: Path):
         for paper in papers:
             writer.writerow(format_paper_for_csv(paper))
 
-def print_table(papers: list[Paper]):
+def print_table(papers: list):
     """Print papers in a formatted table."""
     if not papers:
         console.print("[yellow]No papers found matching the criteria.[/yellow]")
@@ -64,12 +64,12 @@ def print_table(papers: list[Paper]):
 
     for paper in papers:
         table.add_row(
-            paper.pubmed_id,
-            paper.title,
-            paper.publication_date.strftime("%Y-%m-%d"),
-            "\n".join(a.name for a in paper.non_academic_authors),
-            "\n".join(paper.company_affiliations),
-            paper.corresponding_author_email or ""
+            paper["pubmed_id"],
+            paper["title"],
+            paper["publication_date"].strftime("%Y-%m-%d"),
+            "\n".join(a["name"] for a in paper["non_academic_authors"]),
+            "\n".join(paper["company_affiliations"]),
+            paper.get("corresponding_author_email", "")
         )
 
     console.print(table)
