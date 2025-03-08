@@ -1,28 +1,9 @@
 """Core functionality for fetching and processing PubMed papers."""
 
 from typing import List, Optional, Dict, Any
-from dataclasses import dataclass
 from datetime import datetime
 import re
 from Bio import Entrez
-from pydantic import BaseModel, EmailStr
-
-class Author(BaseModel):
-    """Model representing an author with their affiliation."""
-    name: str
-    affiliation: Optional[str] = None
-    email: Optional[EmailStr] = None
-    is_corresponding: bool = False
-    is_non_academic: bool = False
-
-class Paper(BaseModel):
-    """Model representing a research paper."""
-    pubmed_id: str
-    title: str
-    publication_date: datetime
-    non_academic_authors: List[Author]
-    company_affiliations: List[str]
-    corresponding_author_email: Optional[EmailStr] = None
 
 class PubMedFetcher:
     """Class to handle PubMed API interactions."""
@@ -52,6 +33,8 @@ class PubMedFetcher:
     
     def _extract_email(self, text: str) -> Optional[str]:
         """Extract email address from text."""
+        if not text:
+            return None
         email_pattern = r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
         match = re.search(email_pattern, text)
         return match.group(0) if match else None
@@ -63,7 +46,7 @@ class PubMedFetcher:
         day = int(date_dict.get('Day', 1))
         return datetime(year, month, day)
     
-    def fetch_papers(self, query: str, max_results: int = 100) -> List[Paper]:
+    def fetch_papers(self, query: str, max_results: int = 100) -> List[Dict[str, Any]]:
         """
         Fetch papers from PubMed based on the query.
         
@@ -72,7 +55,7 @@ class PubMedFetcher:
             max_results: Maximum number of results to return
             
         Returns:
-            List of Paper objects
+            List of paper dictionaries
         """
         # Search PubMed
         handle = Entrez.esearch(db="pubmed", term=query, retmax=max_results)
@@ -105,29 +88,30 @@ class PubMedFetcher:
                     if is_non_academic:
                         company_affiliations.add(affiliation)
                     
-                    author_obj = Author(
-                        name=name.strip(),
-                        affiliation=affiliation,
-                        email=email,
-                        is_non_academic=is_non_academic
-                    )
+                    author_data = {
+                        "name": name.strip(),
+                        "affiliation": affiliation,
+                        "email": email,
+                        "is_corresponding": False,
+                        "is_non_academic": is_non_academic
+                    }
                     
                     if email and not corresponding_email:
                         corresponding_email = email
-                        author_obj.is_corresponding = True
+                        author_data["is_corresponding"] = True
                     
                     if is_non_academic:
-                        authors.append(author_obj)
+                        authors.append(author_data)
                 
                 if authors:  # Only include papers with non-academic authors
-                    papers.append(Paper(
-                        pubmed_id=pubmed_id,
-                        title=title,
-                        publication_date=pub_date,
-                        non_academic_authors=authors,
-                        company_affiliations=list(company_affiliations),
-                        corresponding_author_email=corresponding_email
-                    ))
+                    papers.append({
+                        "pubmed_id": pubmed_id,
+                        "title": title,
+                        "publication_date": pub_date,
+                        "non_academic_authors": authors,
+                        "company_affiliations": list(company_affiliations),
+                        "corresponding_author_email": corresponding_email
+                    })
             
             handle.close()
         
