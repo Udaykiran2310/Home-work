@@ -1,4 +1,4 @@
-# Home-work
+# HOME WORK
 # PubMed Papers Analyzer
 
 A command-line tool to fetch research papers from PubMed and identify those with authors affiliated with pharmaceutical or biotech companies.
