@@ -1,1 +1,29 @@
+[tool.poetry]
+name = "pubmed-papers-analyzer"
+version = "0.1.0"
+description = "A tool to fetch and analyze research papers from PubMed with company affiliations"
+authors = ["User <user@example.com>"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "pubmed_papers", from = "src"}]
 
+[tool.poetry.dependencies]
+python = "^3.8"
+biopython = "^1.83"
+pandas = "^2.2.0"
+typer = "^0.9.0"
+rich = "^13.7.0"
+pydantic = "^2.6.1"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0.0"
+black = "^24.1.1"
+mypy = "^1.8.0"
+isort = "^5.13.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.scripts]
+get-papers-list = "pubmed_papers.cli:main" 
